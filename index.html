@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro Elettronico - Scuola Fiancoverdi</title>
+<style>
+  body { font-family: Arial; background-color: #e6f0ff; color: #004d00; margin:0; padding:0; }
+  header { background-color:#003399; color:white; padding:20px; text-align:center; }
+  .login-box { max-width:400px; margin:50px auto; background:white; border-radius:8px; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.2);}
+  .login-box input { width:100%; padding:10px; margin:10px 0;}
+  button { width:100%; padding:10px; background-color:#339966; color:white; border:none; cursor:pointer;}
+  table { width:90%; margin:20px auto; border-collapse:collapse;}
+  th, td { padding:10px; border:1px solid #ccc; text-align:center;}
+  th { background-color:#003399; color:white;}
+  .vote-red { background-color:#ff4d4d; color:white;} /* 4 */
+  .vote-yellow { background-color:#ffff66; color:black;} /* 5 */
+  .vote-green { background-color:#66ff66; color:black;} /* >=6 */
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Scuola Fiancoverdi - Registro Elettronico</h1>
+</header>
+
+<div class="login-box" id="loginBox">
+  <h2>Accedi</h2>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Accedi</button>
+  <p id="loginError" style="color:red;"></p>
+</div>
+
+<div id="dashboard" style="display:none;">
+  <h2 style="text-align:center">Dashboard</h2>
+  <table id="gradesTable">
+    <thead>
+      <tr>
+        <th>Studente</th>
+        <th>Materia</th>
+        <th>Voto</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const backendURL = "TUO-RENDER-URL";
+
+async function login() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  try {
+    const res = await fetch(`${backendURL}/login`, { 
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,password})
+    });
+    const data = await res.json();
+    if(res.status !== 200){
+      document.getElementById('loginError').innerText = data.error;
+      return;
+    }
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    loadGrades(data.id);
+  } catch(err){
+    console.error(err);
+  }
+}
+
+async function loadGrades(student_id){
+  const res = await fetch(`${backendURL}/students/${student_id}/grades`);
+  const grades = await res.json();
+  const tbody = document.getElementById('gradesTable').querySelector('tbody');
+  tbody.innerHTML='';
+  grades.forEach(g=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${g.student_name}</td><td>${g.subject}</td><td class="${getVoteClass(g.grade)}">${g.grade}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function getVoteClass(voto){
+  if(voto<=4) return 'vote-red';
+  if(voto==5) return 'vote-yellow';
+  return 'vote-green';
+}
+</script>
+
+</body>
+</html>
